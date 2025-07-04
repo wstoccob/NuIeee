@@ -11,8 +11,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
+        var connString = config["DefaultConnection"];
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(connString));
 
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
             {
