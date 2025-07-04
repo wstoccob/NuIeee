@@ -24,13 +24,13 @@
     <Folder Include="Configurations\" />
     <Folder Include="Persistence\Migrations\" />
     <Folder Include="Repositories\" />
-    <Folder Include="Services\" />
   </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <UserSecretsId>ddf5515e-8132-4f8c-bf1d-7a4d4e56623f</UserSecretsId>
   </PropertyGroup>
 
 </Project>
