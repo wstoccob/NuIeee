@@ -59,6 +59,8 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 
+builder.Services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+
 builder.Services.AddAuthorization();
 
 var app = builder.Build();

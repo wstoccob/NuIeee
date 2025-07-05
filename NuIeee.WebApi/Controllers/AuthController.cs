@@ -7,8 +7,8 @@ using NuIeee.Application.Features.Auth.Queries;
 namespace NuIeee.WebApi.Controllers;
 
 
-[Route("api/auth")]
 [ApiController]
+[Route("api/auth")]
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -43,7 +43,7 @@ public class AuthController : ControllerBase
         }
         catch(Exception ex)
         {
-            return BadRequest(ex.Message);
+            return StatusCode(500, ex.Message);
         }
     }
 }
