@@ -1,9 +1,14 @@
 using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using NuIeee.Application;
 using NuIeee.Application.Interfaces;
+using NuIeee.Domain.Entities;
 using NuIeee.Infrastructure.Auth;
 using NuIeee.Infrastructure.Extensions;
+using NuIeee.Infrastructure.Identity;
+using NuIeee.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,9 +22,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -34,7 +42,33 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.Password.RequireDigit = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequiredLength = 4;
+    })
+    .AddRoles<IdentityRole<Guid>>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddSignInManager()
+    .AddUserManager<UserManager<ApplicationUser>>()
+    .AddRoleManager<RoleManager<IdentityRole<Guid>>>()
+    .AddDefaultTokenProviders();
+
+builder.Services.AddScoped<IJwtService, JwtService>();
+
+builder.Services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+
 builder.Services.AddAuthorization();
+
+// Allow all to access API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+});
 
 var app = builder.Build();
 
@@ -51,5 +85,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseCors("AllowAll");
 
 app.Run();
