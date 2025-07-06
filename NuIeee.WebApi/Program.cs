@@ -63,6 +63,13 @@ builder.Services.AddScoped<IUserManagementRepository, UserManagementRepository>(
 
 builder.Services.AddAuthorization();
 
+// Allow all to access API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -79,14 +86,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-
-    await SeedIdentityData.SeedRolesAsync(roleManager);
-    await SeedIdentityData.SeedSuperAdminAsync(userManager);
-}
+app.UseCors("AllowAll");
 
 app.Run();

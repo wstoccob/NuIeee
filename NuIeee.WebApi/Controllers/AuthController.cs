@@ -25,7 +25,7 @@ public class AuthController : ControllerBase
         {
             var token = await _mediator.Send(new LoginQuery(dto));
 
-            return Ok(token);
+            return Ok(new { token });
         }
         catch (Exception ex)
         {
@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
         try
         {
             var userId = await _mediator.Send(registerCommand);
-            return Ok(userId);
+            return Ok(new { userId });
         }
         catch(Exception ex)
         {

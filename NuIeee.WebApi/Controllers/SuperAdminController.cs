@@ -1,12 +1,8 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using NuIeee.Application.Features.Users.Commands;
 using NuIeee.Application.Features.Users.Queries;
-using NuIeee.Domain.Entities;
-using NuIeee.Infrastructure.Identity;
 
 namespace NuIeee.WebApi.Controllers;
 
@@ -28,11 +24,11 @@ public class SuperAdminController : ControllerBase
         try
         {
             var result = await _mediator.Send(new GetAllUsersQuery());
-            return Ok(result);
+            return Ok(new { result });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, ex);
+            return StatusCode(500, ex.Message);
         }
     }
 
@@ -42,7 +38,7 @@ public class SuperAdminController : ControllerBase
         try
         {
             var result = await _mediator.Send(new GetUserByIdQuery(userId));
-            return Ok(result);
+            return Ok(new { result });
         }
         catch (InvalidOperationException ex)
         {
@@ -60,7 +56,7 @@ public class SuperAdminController : ControllerBase
         try
         {
             var result = await _mediator.Send(command);
-            return Ok(result);
+            return Ok(new { result }]);
         }
         catch (InvalidOperationException ex)
         {
