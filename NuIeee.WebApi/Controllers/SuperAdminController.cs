@@ -56,7 +56,7 @@ public class SuperAdminController : ControllerBase
         try
         {
             var result = await _mediator.Send(command);
-            return Ok(new { result }]);
+            return Ok(new { result });
         }
         catch (InvalidOperationException ex)
         {
