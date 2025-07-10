@@ -8,7 +8,7 @@ public class CreateUserCommandHandler(IUserManagementRepository _userManagementR
 {
     public async Task<Guid> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
-        var id = await _userManagementRepository.CreateUserAsync(request.Username, request.Password, request.Role);
+        var id = await _userManagementRepository.CreateUserAsync(request.Username, request.Fullname, request.Password, request.Role);
 
         return id;
     }

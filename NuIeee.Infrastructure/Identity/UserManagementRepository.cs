@@ -38,14 +38,14 @@ public class UserManagementRepository :  IUserManagementRepository
         return result;
     }
 
-    public async Task<Guid> CreateUserAsync(string username, string password, string role)
+    public async Task<Guid> CreateUserAsync(string username, string fullname, string password, string role)
     {
         if (!await _roleManager.RoleExistsAsync(role))
         {
             throw new InvalidOperationException($"Role {role} not found");
         }
 
-        var user = new ApplicationUser { UserName = username };
+        var user = new ApplicationUser { UserName = username, FullName = fullname};
         var result = await _userManager.CreateAsync(user, password);
 
         if (!result.Succeeded)
