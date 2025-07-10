@@ -4,5 +4,5 @@ namespace NuIeee.Application.Interfaces;
 
 public interface IJwtService
 {
-    string GenerateToken(ApplicationUser user);
+    Task<string> GenerateTokenAsync(ApplicationUser user);
 }

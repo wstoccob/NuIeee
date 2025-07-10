@@ -38,6 +38,6 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, string>
             throw new InvalidOperationException("Invalid username or password");
         }
 
-        return _jwtService.GenerateToken(user);
+        return await _jwtService.GenerateTokenAsync(user);
     }
 }
