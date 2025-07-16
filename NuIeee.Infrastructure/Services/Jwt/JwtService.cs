@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
@@ -8,7 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using NuIeee.Application.Interfaces;
 using NuIeee.Domain.Entities;
 
-namespace NuIeee.Infrastructure.Auth;
+namespace NuIeee.Infrastructure.Services.Jwt;
 
 public class JwtService : IJwtService
 {

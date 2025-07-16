@@ -5,10 +5,10 @@ using Microsoft.IdentityModel.Tokens;
 using NuIeee.Application;
 using NuIeee.Application.Interfaces;
 using NuIeee.Domain.Entities;
-using NuIeee.Infrastructure.Auth;
 using NuIeee.Infrastructure.Extensions;
 using NuIeee.Infrastructure.Identity;
 using NuIeee.Infrastructure.Persistence;
+using NuIeee.Infrastructure.Services.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
