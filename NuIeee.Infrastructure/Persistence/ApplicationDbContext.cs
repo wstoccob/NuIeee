@@ -11,9 +11,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         : base(options)
     {
     }
-    
-    DbSet<Team> Teams { get; set; }
-    DbSet<TeamMember> TeamMembers { get; set; }
+
+    public DbSet<Team> Teams { get; set; }
+    public DbSet<TeamMember> TeamMembers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
