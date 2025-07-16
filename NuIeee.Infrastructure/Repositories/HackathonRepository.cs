@@ -1,9 +1,10 @@
-﻿using NuIeee.Domain.Entities;
+﻿using NuIeee.Application.Interfaces;
+using NuIeee.Domain.Entities;
 using NuIeee.Infrastructure.Persistence;
 
 namespace NuIeee.Infrastructure.Repositories;
 
-public class HackathonRepository
+public class HackathonRepository : IHackathonRepository
 {
     private readonly ApplicationDbContext _context;
 

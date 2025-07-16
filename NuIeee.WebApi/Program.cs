@@ -3,12 +3,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using NuIeee.Application;
-using NuIeee.Application.Interfaces;
 using NuIeee.Domain.Entities;
 using NuIeee.Infrastructure.Extensions;
-using NuIeee.Infrastructure.Identity;
 using NuIeee.Infrastructure.Persistence;
-using NuIeee.Infrastructure.Services.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,10 +53,6 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     .AddUserManager<UserManager<ApplicationUser>>()
     .AddRoleManager<RoleManager<IdentityRole<Guid>>>()
     .AddDefaultTokenProviders();
-
-builder.Services.AddScoped<IJwtService, JwtService>();
-
-builder.Services.AddScoped<IUserManagementRepository, UserManagementRepository>();
 
 builder.Services.AddAuthorization();
 
