@@ -17,6 +17,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        base.OnModelCreating(builder);
+        
+        // Configure Team-TeamMember relationship
         builder.Entity<Team>()
             .HasMany(t => t.Members)
             .WithOne(m => m.Team)
