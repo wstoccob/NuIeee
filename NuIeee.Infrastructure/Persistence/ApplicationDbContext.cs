@@ -11,4 +11,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         : base(options)
     {
     }
+    
+    DbSet<Team> Teams { get; set; }
+    DbSet<TeamMember> TeamMembers { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        builder.Entity<Team>()
+            .HasMany(t => t.Members)
+            .WithOne(m => m.Team)
+            .HasForeignKey(m => m.TeamId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
 }
