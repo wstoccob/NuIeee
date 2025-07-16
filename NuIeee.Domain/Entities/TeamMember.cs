@@ -1,5 +1,8 @@
-﻿namespace NuIeee.Domain.Entities;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
+namespace NuIeee.Domain.Entities;
+
+[Table("TeamMembers")]
 public class TeamMember : BaseEntity
 {
     public string FullName { get; set; }
@@ -8,6 +11,7 @@ public class TeamMember : BaseEntity
     public string Email { get; set; }
     public string YearOfStudy { get; set; }
     public string Major { get; set; }
+    public bool IsCaptain { get; set; }
 
     // Foreign key
     public Guid TeamId { get; set; }
