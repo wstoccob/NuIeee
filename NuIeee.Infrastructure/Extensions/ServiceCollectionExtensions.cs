@@ -2,8 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NuIeee.Application.Interfaces;
 using NuIeee.Domain.Entities;
+using NuIeee.Infrastructure.Identity;
 using NuIeee.Infrastructure.Persistence;
+using NuIeee.Infrastructure.Repositories;
+using NuIeee.Infrastructure.Services.Jwt;
 
 namespace NuIeee.Infrastructure.Extensions;
 
@@ -22,6 +26,12 @@ public static class ServiceCollectionExtensions
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
+        services.AddScoped<IHackathonRepository, HackathonRepository>();
+        services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+        services.AddScoped<IJwtService, JwtService>();
+        
+
+        
         return services;
     }
 }

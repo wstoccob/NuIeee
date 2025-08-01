@@ -23,7 +23,6 @@
     <Folder Include="Auth\" />
     <Folder Include="Configurations\" />
     <Folder Include="Persistence\Migrations\" />
-    <Folder Include="Repositories\" />
   </ItemGroup>
 
   <PropertyGroup>
