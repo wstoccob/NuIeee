@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NuIeee.Application.Features.Events.Commands;
+using NuIeee.Application.Features.Events.Queries;
 
 namespace NuIeee.WebApi.Controllers;
 
@@ -9,12 +10,12 @@ namespace NuIeee.WebApi.Controllers;
 [Route("api/events")]
 public class EventsController(IMediator mediator) : ControllerBase
 {
-    /*[HttpGet]
-    public async Task<IActionResult> GetAllEvents()
+    [HttpGet]
+    public async Task<IActionResult> GetAllEvents(CancellationToken cancellationToken)
     {
-        var result = await mediator.Send();
+        var result = await mediator.Send(new GetAllEventsQuery(), cancellationToken);
         return Ok(result);
-    }*/
+    }
     
     [Authorize(Roles="SuperAdmin")]
     [HttpPost("create-event")]
