@@ -25,4 +25,13 @@ public class EventRepository(ApplicationDbContext dbContext) : IEventRepository
         
         return events;
     }
+
+    public async Task<Event> GetEventAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var eventEntity = await dbContext.Events
+            .Include(e => e.EventPhotos)
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        
+        return eventEntity;
+    }
 }

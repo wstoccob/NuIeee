@@ -17,6 +17,14 @@ public class EventsController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
     
+    [HttpGet("/{id:guid}")]
+    public async Task<IActionResult> GetEventByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetEventByIdQuery(id), cancellationToken);
+        
+        return Ok(result);
+    }
+    
     [Authorize(Roles="SuperAdmin")]
     [HttpPost("create-event")]
     public async Task<IActionResult> CreateEventAsync(CreateEventCommand command)
