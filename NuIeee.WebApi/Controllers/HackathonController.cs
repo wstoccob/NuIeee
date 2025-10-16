@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NuIeee.Application.Features.Hackathon;
 using NuIeee.Application.Features.Hackathon.Commands;
@@ -9,6 +10,7 @@ namespace NuIeee.WebApi.Controllers;
 [Route("api/hackathon")]
 public class HackathonController(IMediator _mediator) : ControllerBase
 {
+    [Authorize(Roles="SuperAdmin")]
     [HttpGet("get-hackathon-teams")]
     public async Task<IActionResult> GetHackathonTeamsAsync()
     {

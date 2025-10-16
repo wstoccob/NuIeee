@@ -9,21 +9,14 @@ namespace NuIeee.WebApi.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController : ControllerBase
+public class AuthController(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public AuthController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpPost("login")]
     public async Task<IActionResult> LoginAsync([FromBody] LoginDto dto)
     {
         try
         {
-            var token = await _mediator.Send(new LoginQuery(dto));
+            var token = await mediator.Send(new LoginQuery(dto));
 
             return Ok(new { token });
         }
@@ -38,7 +31,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var userId = await _mediator.Send(registerCommand);
+            var userId = await mediator.Send(registerCommand);
             return Ok(new { userId });
         }
         catch(Exception ex)

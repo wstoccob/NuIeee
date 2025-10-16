@@ -8,7 +8,7 @@ namespace NuIeee.WebApi.Controllers;
 
 [ApiController]
 [Route("api/superadmin")]
-[Authorize(Roles = "SuperAdmin")]
+// [Authorize(Roles = "SuperAdmin")]
 public class SuperAdminController : ControllerBase
 {
     private readonly IMediator _mediator;
