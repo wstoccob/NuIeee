@@ -45,4 +45,12 @@ public class EventRepository(ApplicationDbContext dbContext) : IEventRepository
         
         return events;
     }
+
+    public async Task<bool> UpdateEventAsync(Event eventEntity, CancellationToken cancellationToken)
+    {
+        dbContext.Events.Update(eventEntity);
+        var result = await dbContext.SaveChangesAsync(cancellationToken);
+        
+        return result > 0;
+    }
 }

@@ -11,4 +11,6 @@ public interface IEventRepository
     Task<EventEntity> GetEventAsync(Guid id, CancellationToken cancellationToken);
     
     Task<List<EventEntity>> GetLastCountEventsAsync(int count, CancellationToken cancellationToken);
+    
+    Task<bool> UpdateEventAsync(EventEntity eventEntity, CancellationToken cancellationToken);
 }

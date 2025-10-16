@@ -33,11 +33,25 @@ public class EventsController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
     
-    [Authorize(Roles="SuperAdmin")]
+    [Authorize(Roles="Admin, SuperAdmin")]
     [HttpPost("create-event")]
     public async Task<IActionResult> CreateEventAsync(CreateEventCommand command)
     {
         var id = await mediator.Send(command);
         return Ok(id);
     }
+    
+    [Authorize(Roles="Admin, SuperAdmin")]
+    [HttpPut("update-event")]
+    public async Task<IActionResult> UpdateEventAsync(UpdateEventCommand command, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(command, cancellationToken);
+        if (!result)
+        {
+            return BadRequest("Failed to update the event.");
+        }
+        
+        return Ok(result);
+    }
+    
 }
