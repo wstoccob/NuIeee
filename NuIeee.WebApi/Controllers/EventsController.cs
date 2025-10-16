@@ -17,7 +17,7 @@ public class EventsController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
     
-    [HttpGet("/{id:guid}")]
+    [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetEventByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetEventByIdQuery(id), cancellationToken);
@@ -25,7 +25,7 @@ public class EventsController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("/last/{count:int}")]
+    [HttpGet("last/{count:int}")]
     public async Task<IActionResult> GetLastCountEventsAsync(int count, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetLastCountEventsQuery(count), cancellationToken);
@@ -49,6 +49,19 @@ public class EventsController(IMediator mediator) : ControllerBase
         if (!result)
         {
             return BadRequest("Failed to update the event.");
+        }
+        
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin, SuperAdmin")]
+    [HttpDelete("delete-event/{id:guid}")]
+    public async Task<IActionResult> DeleteEventAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new DeleteEventCommand(id), cancellationToken);
+        if (!result)
+        {
+            return BadRequest("Failed to delete the event.");
         }
         
         return Ok(result);
