@@ -29,8 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IHackathonRepository, HackathonRepository>();
         services.AddScoped<IUserManagementRepository, UserManagementRepository>();
         services.AddScoped<IJwtService, JwtService>();
-        
-
+        services.AddScoped<IEventRepository, EventRepository>();
         
         return services;
     }
