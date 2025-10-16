@@ -10,10 +10,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
     }
 
     public DbSet<Team> Teams { get; set; }
     public DbSet<TeamMember> TeamMembers { get; set; }
+    public DbSet<Event> Events { get; set; }
+    public DbSet<EventPhoto> EventPhotos { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -24,6 +27,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             .HasMany(t => t.Members)
             .WithOne(m => m.Team)
             .HasForeignKey(m => m.TeamId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Entity<Event>()
+            .HasMany(e => e.EventPhotos)
+            .WithOne(ep => ep.Event)
+            .HasForeignKey(ep => ep.EventId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
