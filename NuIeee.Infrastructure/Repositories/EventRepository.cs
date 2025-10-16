@@ -53,4 +53,12 @@ public class EventRepository(ApplicationDbContext dbContext) : IEventRepository
         
         return result > 0;
     }
+
+    public async Task<bool> DeleteEventAsync(Guid id, CancellationToken cancellationToken)
+    {
+        dbContext.Events.Remove(await GetEventAsync(id, cancellationToken));
+        var result = await dbContext.SaveChangesAsync(cancellationToken);
+        
+        return result > 0;
+    }
 }
