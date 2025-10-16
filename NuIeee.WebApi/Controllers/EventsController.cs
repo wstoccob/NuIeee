@@ -24,6 +24,14 @@ public class EventsController(IMediator mediator) : ControllerBase
         
         return Ok(result);
     }
+
+    [HttpGet("/last/{count:int}")]
+    public async Task<IActionResult> GetLastCountEventsAsync(int count, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetLastCountEventsQuery(count), cancellationToken);
+        
+        return Ok(result);
+    }
     
     [Authorize(Roles="SuperAdmin")]
     [HttpPost("create-event")]

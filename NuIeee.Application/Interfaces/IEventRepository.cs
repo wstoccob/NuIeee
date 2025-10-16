@@ -9,4 +9,6 @@ public interface IEventRepository
     Task<List<EventEntity>> GetAllEventsAsync(CancellationToken cancellationToken);
     
     Task<EventEntity> GetEventAsync(Guid id, CancellationToken cancellationToken);
+    
+    Task<List<EventEntity>> GetLastCountEventsAsync(int count, CancellationToken cancellationToken);
 }

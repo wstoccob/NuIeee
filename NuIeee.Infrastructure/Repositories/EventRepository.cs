@@ -34,4 +34,15 @@ public class EventRepository(ApplicationDbContext dbContext) : IEventRepository
         
         return eventEntity;
     }
+
+    public async Task<List<Event>> GetLastCountEventsAsync(int count, CancellationToken cancellationToken)
+    {
+        var events = await dbContext.Events
+            .Include(e => e.EventPhotos)
+            .OrderByDescending(e => e.EventDateTime)
+            .Take(count)
+            .ToListAsync(cancellationToken);
+        
+        return events;
+    }
 }
