@@ -22,7 +22,7 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 # Expose the default ASP.NET port
-EXPOSE 80
+EXPOSE 8080
 
 # Run the application
 ENTRYPOINT ["dotnet", "NuIeee.WebApi.dll"]
