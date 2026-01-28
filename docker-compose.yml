@@ -21,6 +21,8 @@
   db:
     image: postgres:16
     container_name: nuieee-db
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: nuieee
       POSTGRES_USER: postgres
