@@ -1,8 +1,6 @@
 ﻿services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/wstoccob/nuieee-backend:latest
     container_name: nuieee-api
     ports:
       - "8080:8080"
