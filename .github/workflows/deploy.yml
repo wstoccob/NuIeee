@@ -1,4 +1,4 @@
-﻿name: Deploy Backend
+﻿name: Deploy Backend to Production
 
 on:
   push:
@@ -32,13 +32,14 @@ jobs:
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@master
         with:
-          host: 65.108.155.254
-          username: alinur
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             cd ~/apps/backend/NuIeee
-            docker compose pull
-            docker compose up -d
+            # Use production docker-compose file
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
             docker image prune -f

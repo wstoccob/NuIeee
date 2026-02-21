@@ -82,16 +82,28 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 builder.Services.AddAuthorization();
 
-// Allow all to access API
+var allowedOrigins = new List<string> 
+{ 
+    "https://ieee.nu", 
+    "https://www.ieee.nu" 
+};
+
+if (builder.Environment.IsDevelopment())
+{
+    allowedOrigins.Add("http://localhost:5173");
+    allowedOrigins.Add("http://localhost:3000");
+}
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
+    options.AddPolicy("AllowSpecific",
         policy =>
         {
             policy
+                .WithOrigins(allowedOrigins.ToArray())
                 .AllowAnyHeader()
                 .AllowAnyMethod()
-                .AllowAnyOrigin();
+                .AllowCredentials(); 
         });
 });
 
@@ -106,7 +118,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowAll");
+app.UseCors("AllowSpecific");
 
 app.UseAuthentication();
 app.UseAuthorization();
