@@ -1,28 +1,25 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NuIeee.Application.Features.Hackathon;
-using NuIeee.Application.Features.Hackathon.Commands;
+using NuIeee.Application.Services.Hackathon;
 
 namespace NuIeee.WebApi.Controllers;
 
 [ApiController]
 [Route("api/hackathon")]
-public class HackathonController(IMediator _mediator) : ControllerBase
+public class HackathonController(IHackathonService hackathonService) : ControllerBase
 {
     [Authorize(Roles="SuperAdmin")]
     [HttpGet("get-hackathon-teams")]
     public async Task<IActionResult> GetHackathonTeamsAsync()
     {
-        var result = await _mediator.Send(new GetHackathonTeamsQuery());
+        var result = await hackathonService.GetHackathonTeamsAsync();
         return Ok(result);
     }
     
     [HttpPost("register-team")]
-    public async Task<IActionResult> RegisterTeamAsync(RegisterTeamCommand command)
+    public async Task<IActionResult> RegisterTeamAsync([FromBody] RegisterTeamDto registerTeamDto)
     {
-        await _mediator.Send(command);
-        
+        await hackathonService.RegisterTeamAsync(registerTeamDto);
         return Ok();
     }
 }

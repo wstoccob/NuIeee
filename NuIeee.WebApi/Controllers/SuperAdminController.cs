@@ -1,29 +1,21 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NuIeee.Application.Features.Users.Commands;
-using NuIeee.Application.Features.Users.Queries;
+using NuIeee.Application.DTOs.Identity;
+using NuIeee.Application.Services.Users;
 
 namespace NuIeee.WebApi.Controllers;
 
 [ApiController]
 [Route("api/superadmin")]
-// [Authorize(Roles = "SuperAdmin")]
-public class SuperAdminController : ControllerBase
+[Authorize(Roles = "SuperAdmin")]
+public class SuperAdminController(IUserService userService) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public SuperAdminController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpGet("users")]
     public async Task<IActionResult> GetAllUsersAsync()
     {
         try
         {
-            var result = await _mediator.Send(new GetAllUsersQuery());
+            var result = await userService.GetAllUsersAsync();
             return Ok(new { result });
         }
         catch (Exception ex)
@@ -37,7 +29,7 @@ public class SuperAdminController : ControllerBase
     {
         try
         {
-            var result = await _mediator.Send(new GetUserByIdQuery(userId));
+            var result = await userService.GetUserByIdAsync(userId);
             return Ok(new { result });
         }
         catch (InvalidOperationException ex)
@@ -51,11 +43,15 @@ public class SuperAdminController : ControllerBase
     }
 
     [HttpPost("create-user")]
-    public async Task<IActionResult> CreateUserAsync(CreateUserCommand command)
+    public async Task<IActionResult> CreateUserAsync([FromBody] CreateUserDto createUserDto)
     {
         try
         {
-            var result = await _mediator.Send(command);
+            var result = await userService.CreateUserAsync(
+                createUserDto.Username, 
+                createUserDto.Fullname, 
+                createUserDto.Password, 
+                createUserDto.Role);
             return Ok(new { result });
         }
         catch (InvalidOperationException ex)
@@ -69,11 +65,11 @@ public class SuperAdminController : ControllerBase
     }
 
     [HttpDelete("delete-user")]
-    public async Task<IActionResult> DeleteUserAsync(DeleteUserCommand command)
+    public async Task<IActionResult> DeleteUserAsync([FromBody] DeleteUserDto deleteUserDto)
     {
         try
         {
-            await _mediator.Send(command);
+            await userService.DeleteUserAsync(deleteUserDto.UserId);
             return Ok();
         }
         catch (InvalidOperationException ex)

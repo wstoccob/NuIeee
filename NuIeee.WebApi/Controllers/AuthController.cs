@@ -1,23 +1,19 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using NuIeee.Application.DTOs.Auth;
-using NuIeee.Application.Features.Auth.Commands;
-using NuIeee.Application.Features.Auth.Queries;
+using NuIeee.Application.Services.Auth;
 
 namespace NuIeee.WebApi.Controllers;
 
-
 [ApiController]
 [Route("api/auth")]
-public class AuthController(IMediator mediator) : ControllerBase
+public class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("login")]
     public async Task<IActionResult> LoginAsync([FromBody] LoginDto dto)
     {
         try
         {
-            var token = await mediator.Send(new LoginQuery(dto));
-
+            var token = await authService.LoginAsync(dto);
             return Ok(new { token });
         }
         catch (Exception ex)
@@ -27,14 +23,14 @@ public class AuthController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterAsync([FromBody] RegisterCommand registerCommand)
+    public async Task<IActionResult> RegisterAsync([FromBody] RegisterDto registerDto)
     {
         try
         {
-            var userId = await mediator.Send(registerCommand);
+            var userId = await authService.RegisterAsync(registerDto.Username, registerDto.Password);
             return Ok(new { userId });
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             return StatusCode(500, ex.Message);
         }

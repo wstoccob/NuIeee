@@ -1,51 +1,48 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NuIeee.Application.Features.Events.Commands;
-using NuIeee.Application.Features.Events.Queries;
+using NuIeee.Application.DTOs.Events;
+using NuIeee.Application.Services.Events;
 
 namespace NuIeee.WebApi.Controllers;
 
 [ApiController]
 [Route("api/events")]
-public class EventsController(IMediator mediator) : ControllerBase
+public class EventsController(IEventService eventService) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAllEvents(CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetAllEventsQuery(), cancellationToken);
+        var result = await eventService.GetAllEventsAsync(cancellationToken);
         return Ok(result);
     }
     
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetEventByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetEventByIdQuery(id), cancellationToken);
-        
+        var result = await eventService.GetEventByIdAsync(id, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("last/{count:int}")]
     public async Task<IActionResult> GetLastCountEventsAsync(int count, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetLastCountEventsQuery(count), cancellationToken);
-        
+        var result = await eventService.GetLastCountEventsAsync(count, cancellationToken);
         return Ok(result);
     }
     
     [Authorize(Roles="Admin, SuperAdmin")]
     [HttpPost("create-event")]
-    public async Task<IActionResult> CreateEventAsync(CreateEventCommand command)
+    public async Task<IActionResult> CreateEventAsync([FromBody] CreateEventDto createEventDto)
     {
-        var id = await mediator.Send(command);
+        var id = await eventService.CreateEventAsync(createEventDto);
         return Ok(id);
     }
     
     [Authorize(Roles="Admin, SuperAdmin")]
     [HttpPut("update-event")]
-    public async Task<IActionResult> UpdateEventAsync(UpdateEventCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateEventAsync([FromBody] EventDto eventDto, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(command, cancellationToken);
+        var result = await eventService.UpdateEventAsync(eventDto, cancellationToken);
         if (!result)
         {
             return BadRequest("Failed to update the event.");
@@ -58,7 +55,7 @@ public class EventsController(IMediator mediator) : ControllerBase
     [HttpDelete("delete-event/{id:guid}")]
     public async Task<IActionResult> DeleteEventAsync(Guid id, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new DeleteEventCommand(id), cancellationToken);
+        var result = await eventService.DeleteEventAsync(id, cancellationToken);
         if (!result)
         {
             return BadRequest("Failed to delete the event.");
@@ -66,5 +63,4 @@ public class EventsController(IMediator mediator) : ControllerBase
         
         return Ok(result);
     }
-    
 }

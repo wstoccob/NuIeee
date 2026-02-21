@@ -7,7 +7,6 @@ using NuIeee.Domain.Entities;
 using NuIeee.Infrastructure.Identity;
 using NuIeee.Infrastructure.Persistence;
 using NuIeee.Infrastructure.Repositories;
-using NuIeee.Infrastructure.Services.Jwt;
 
 namespace NuIeee.Infrastructure.Extensions;
 
@@ -29,7 +28,6 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IHackathonRepository, HackathonRepository>();
         services.AddScoped<IUserManagementRepository, UserManagementRepository>();
-        services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IEventRepository, EventRepository>();
         
         return services;

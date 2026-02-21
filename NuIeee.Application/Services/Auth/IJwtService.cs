@@ -1,6 +1,6 @@
-﻿using NuIeee.Domain.Entities;
+using NuIeee.Domain.Entities;
 
-namespace NuIeee.Application.Interfaces;
+namespace NuIeee.Application.Services.Auth;
 
 public interface IJwtService
 {
