@@ -15,10 +15,11 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=nuieee;Username=postgres;Password=${DB_PASSWORD}
       JWT__KEY: ${JWT__KEY}
-      MinIO__Endpoint: http://minio:9000
+      MinIO__Endpoint: minio.ieee.nu
       MinIO__AccessKey: ${MINIO_ACCESS_KEY:-minioadmin}
       MinIO__SecretKey: ${MINIO_SECRET_KEY}
       MinIO__BucketName: event-photos
+      MinIO__UseSSL: ${MINIO_USE_SSL:-true}
     depends_on:
       db:
         condition: service_healthy
