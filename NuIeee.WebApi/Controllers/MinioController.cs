@@ -24,7 +24,7 @@ public class MinioController : ControllerBase
         try
         {
             var url = await _minioService.GetPresignedUploadUrlAsync(fileName, expirationSeconds);
-            return Ok(new { uploadUrl = url });
+            return Ok(new { uploadUrl = url, fileName = fileName });
         }
         catch (Exception ex)
         {
