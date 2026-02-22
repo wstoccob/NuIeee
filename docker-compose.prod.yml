@@ -16,9 +16,9 @@ services:
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=nuieee;Username=postgres;Password=${DB_PASSWORD}
       JWT__KEY: ${JWT__KEY}
       MinIO__Endpoint: http://minio:9000
-      MinIO__AccessKey: ${MINIO_ROOT_USER:-minioadmin}
-      MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
-      MinIO__BucketName: nuieee-prod
+      MinIO__AccessKey: ${MINIO_ACCESS_KEY:-minioadmin}
+      MinIO__SecretKey: ${MINIO_SECRET_KEY}
+      MinIO__BucketName: event-photos
     depends_on:
       db:
         condition: service_healthy
@@ -55,8 +55,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_SERVER_URL: https://minio.ieee.nu
       MINIO_BROWSER_REDIRECT_URL: https://minio-console.ieee.nu
     volumes:

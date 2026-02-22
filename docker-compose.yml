@@ -15,10 +15,10 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=nuieee_dev;Username=postgres;Password=${DB_PASSWORD:-dev-password}
       JWT__KEY: ${JWT__KEY:-dev-jwt-key-not-secure}
-      MinIO__Endpoint: http://minio:9000
+      MinIO__Endpoint: localhost:9000
       MinIO__AccessKey: minioadmin
-      MinIO__SecretKey: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      MinIO__BucketName: nuieee-dev
+      MinIO__SecretKey: ${MINIO_SECRET_KEY:-minioadmin}
+      MinIO__BucketName: event-photos
     depends_on:
       db:
         condition: service_healthy
@@ -55,8 +55,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
     volumes:
       - minio_dev_data:/data
     command: server /data --console-address ":9001"

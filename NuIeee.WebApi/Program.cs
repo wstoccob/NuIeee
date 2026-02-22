@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using NuIeee.Application;
 using NuIeee.Domain.Entities;
 using NuIeee.Infrastructure.Extensions;
+using NuIeee.Infrastructure.Identity;
 using NuIeee.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -132,5 +133,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+    await RoleSeeder.SeedRolesAsync(roleManager);
+}
 
 app.Run();
