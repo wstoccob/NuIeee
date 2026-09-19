@@ -13,11 +13,13 @@ Backups already taken: `backups/nuieee-backup-*.sql` (local) and `~/nuieee-backu
 
 - [x] **Step 1** — data migrated: 18 events, 35 photos, 2 users in the new tables
 - [x] **Step 2** — `JWT_SECRET` (64 chars) and `API_TAG` added to the VPS `.env`
-- [ ] **Step 3** — commit and push
-- [ ] **Step 4** — watch the deploy
-- [ ] **Step 5** — point the frontend at the new API
-- [ ] **Step 6** — verify end to end
+- [x] **Step 3** — committed and pushed (backend `b116216`, frontend `c3e1335`)
+- [x] **Step 4** — deployed; API running `ghcr.io/wstoccob/nuieee-api:sha-b116216`
+- [x] **Step 5** — frontend live on Vercel against `api.ieee.nu`
+- [x] **Step 6** — verified: 18 events, 35 photos, auth enforced, images serving
 - [ ] **Step 7** — drop the legacy tables (wait a week)
+
+The cutover is complete. Only step 7 remains, and it is deliberately deferred.
 
 ---
 
