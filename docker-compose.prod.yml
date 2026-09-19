@@ -1,30 +1,44 @@
-# Production Environment - For VPS Deployment Only
-# Use this with: docker compose -f docker-compose.prod.yml up -d
-# Services are exposed via reverse proxy (nginx/traefik) with proper URLs
+# Production stack. Postgres and MinIO bind to loopback only and are reached
+# through host nginx; the API is published on 127.0.0.1:8080 because that is
+# what /etc/nginx/sites-enabled/ieee-api already proxies to.
 
 services:
-  api:
-    image: ghcr.io/${GHCR_OWNER}/nuieee-backend:latest
-    container_name: nuieee-api
-    ports:
-      - "8080:8080"
-    env_file:
-      - .env
+  migrate:
+    image: ghcr.io/${GHCR_OWNER}/nuieee-api:${API_TAG:-latest}
+    container_name: nuieee-migrate
+    command: ["alembic", "upgrade", "head"]
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_HTTP_PORTS: 8080
-      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=nuieee;Username=postgres;Password=${DB_PASSWORD}
-      JWT__KEY: ${JWT__KEY}
-      MinIO__Endpoint: minio.ieee.nu
-      MinIO__AccessKey: ${MINIO_ACCESS_KEY:-minioadmin}
-      MinIO__SecretKey: ${MINIO_SECRET_KEY}
-      MinIO__BucketName: event-photos
-      MinIO__UseSSL: ${MINIO_USE_SSL:-true}
+      DATABASE_URL: postgresql+asyncpg://postgres:${DB_PASSWORD}@db:5432/nuieee
+      JWT_SECRET: ${JWT_SECRET}
+      MINIO_ENDPOINT: minio.ieee.nu
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     depends_on:
       db:
         condition: service_healthy
-      minio:
-        condition: service_healthy
+    restart: "no"
+    networks:
+      - nuieee-network
+
+  api:
+    image: ghcr.io/${GHCR_OWNER}/nuieee-api:${API_TAG:-latest}
+    container_name: nuieee-api
+    ports:
+      - "127.0.0.1:8080:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:${DB_PASSWORD}@db:5432/nuieee
+      JWT_SECRET: ${JWT_SECRET}
+      ACCESS_TOKEN_TTL_MINUTES: ${ACCESS_TOKEN_TTL_MINUTES:-180}
+      CORS_ORIGINS: '["https://ieee.nu","https://www.ieee.nu"]'
+      MINIO_ENDPOINT: minio.ieee.nu
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: event-photos
+      MINIO_SECURE: "true"
+      MINIO_PUBLIC_BASE_URL: https://minio.ieee.nu
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - nuieee-network
@@ -33,7 +47,7 @@ services:
     image: postgres:16
     container_name: nuieee-db
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_DB: nuieee
       POSTGRES_USER: postgres
@@ -53,8 +67,8 @@ services:
     image: quay.io/minio/minio
     container_name: nuieee-minio
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}

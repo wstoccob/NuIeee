@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.github/
+.idea/
+backups/
+tests/
+NuIeee.*/
+dist/
+.env

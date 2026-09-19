@@ -1,45 +1,139 @@
-﻿name: Deploy Backend to Production
+name: Deploy API to Production
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+    paths:
+      - "src/**"
+      - "alembic/**"
+      - "scripts/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "Dockerfile.api"
+      - "docker-compose.prod.yml"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
 
 permissions:
   packages: write
   contents: read
 
+# Never let two deploys race onto the same VPS.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/nuieee-api
+
 jobs:
-  build-and-deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --locked --group dev
+      - run: uv run ruff check src tests scripts alembic
+      - run: uv run ruff format --check src tests scripts alembic
+      - run: uv run pytest -q
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: meta
+        run: echo "tag=sha-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker image
-        uses: docker/build-push-action@v5
+      - uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.api
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/nuieee-backend:latest
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@master
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          API_TAG: ${{ needs.build.outputs.tag }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: API_TAG,REGISTRY_TOKEN,REGISTRY_USER
+          script_stop: true
           script: |
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
+            set -euo pipefail
             cd ~/apps/backend/NuIeee
-            # Use production docker-compose file
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
-            docker image prune -f
+
+            # Compose and any deploy config come from git, never from hand edits on the
+            # box. Without this the server can silently run a stale compose file.
+            git fetch --quiet origin main
+            git reset --hard --quiet origin/main
+            echo "server synced to $(git rev-parse --short HEAD)"
+
+            echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
+
+            # Remember what is live so a failed rollout can be reverted.
+            PREVIOUS=$(docker inspect nuieee-api --format '{{.Config.Image}}' 2>/dev/null || echo "")
+            echo "currently live: ${PREVIOUS:-<none>}"
+
+            export API_TAG
+            grep -q '^API_TAG=' .env && sed -i "s|^API_TAG=.*|API_TAG=$API_TAG|" .env || echo "API_TAG=$API_TAG" >> .env
+
+            docker compose -f docker-compose.prod.yml pull api migrate
+            docker compose -f docker-compose.prod.yml up -d --no-deps db minio
+            docker compose -f docker-compose.prod.yml up --exit-code-from migrate migrate
+            docker compose -f docker-compose.prod.yml up -d --no-deps api
+
+            # A container that starts is not a container that works.
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8080/health >/dev/null 2>&1; then
+                echo "health check passed after ${i}s"
+                docker image prune -f --filter "until=168h"
+                exit 0
+              fi
+              sleep 2
+            done
+
+            echo "health check FAILED"
+            docker compose -f docker-compose.prod.yml logs --tail=50 api || true
+
+            # Only roll back to a previous image of THIS service. On the very first
+            # deploy the live container is the old .NET image, whose tag is not a
+            # valid rollback target for nuieee-api.
+            case "$PREVIOUS" in
+              *nuieee-api:*)
+                sed -i "s|^API_TAG=.*|API_TAG=${PREVIOUS##*:}|" .env
+                docker compose -f docker-compose.prod.yml up -d --no-deps api
+                echo "rolled back to $PREVIOUS"
+                ;;
+              *)
+                echo "no previous nuieee-api image to roll back to (was: ${PREVIOUS:-<none>})"
+                echo "the API is DOWN - fix forward or restore manually, see CUTOVER.md"
+                ;;
+            esac
+            exit 1

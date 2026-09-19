@@ -6,3 +6,9 @@ riderModule.iml
 .idea
 *.user
 .env
+# Python
+.venv/
+__pycache__/
+*.pyc
+backups/
+.env
