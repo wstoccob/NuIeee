@@ -119,7 +119,7 @@ The frontend lives in the separate `nuieee-client` repo and deploys from Vercel.
 (`/events/create-event`, `/superadmin/users`), which no longer exist once step 4 lands, so
 the events page breaks until this step completes. Do step 5 straight after step 4.
 
-First set the environment variable in the Vercel dashboard for `nuieee-client`:
+First set the environment variable in the Vercel dashboard for `nuieee-client`: 
 
 ```
 VITE_API_BASE_URL = https://api.ieee.nu/api

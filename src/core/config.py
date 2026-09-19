@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     access_token_ttl_minutes: int = 180
 
     cors_origins: list[str] = ["https://ieee.nu", "https://www.ieee.nu"]
+    # Vercel preview deployments get a generated hostname per build, so they
+    # cannot be listed individually.
+    cors_origin_regex: str | None = None
 
     minio_endpoint: str
     minio_access_key: str

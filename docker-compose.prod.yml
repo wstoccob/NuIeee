@@ -30,6 +30,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ACCESS_TOKEN_TTL_MINUTES: ${ACCESS_TOKEN_TTL_MINUTES:-180}
       CORS_ORIGINS: '["https://ieee.nu","https://www.ieee.nu"]'
+      CORS_ORIGIN_REGEX: '^https://nuieee-client-[a-z0-9]+-wstoccobs-projects\.vercel\.app$'
       MINIO_ENDPOINT: minio.ieee.nu
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
