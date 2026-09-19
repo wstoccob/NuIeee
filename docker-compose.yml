@@ -1,42 +1,39 @@
-﻿# Development Environment - For Local Development Only
-# Use this with: docker compose up -d
-# All services are on localhost, no external URLs needed
+# Local development stack: docker compose up -d
+# The API is rebuilt from source; production uses a prebuilt GHCR image.
 
 services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: nuieee-api
+    container_name: nuieee-api-dev
     ports:
-      - "8080:8080"
+      - "8000:8000"
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_HTTP_PORTS: 8080
-      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=nuieee_dev;Username=postgres;Password=${DB_PASSWORD:-dev-password}
-      JWT__KEY: ${JWT__KEY:-dev-jwt-key-not-secure}
-      MinIO__Endpoint: localhost:9000
-      MinIO__AccessKey: minioadmin
-      MinIO__SecretKey: ${MINIO_SECRET_KEY:-minioadmin}
-      MinIO__BucketName: event-photos
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/nuieee
+      JWT_SECRET: dev-secret-not-for-production-min-32-chars
+      CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
+      MINIO_ENDPOINT: localhost:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: event-photos
+      MINIO_SECURE: "false"
+      MINIO_PUBLIC_BASE_URL: http://localhost:9000
     depends_on:
       db:
         condition: service_healthy
       minio:
         condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - nuieee-network
+    networks: [nuieee-dev]
 
   db:
     image: postgres:16
-    container_name: nuieee-db
+    container_name: nuieee-db-dev
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
-      POSTGRES_DB: nuieee_dev
+      POSTGRES_DB: nuieee
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev-password}
+      POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
@@ -44,19 +41,17 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
-    networks:
-      - nuieee-network
+    networks: [nuieee-dev]
 
   minio:
     image: quay.io/minio/minio
-    container_name: nuieee-minio
+    container_name: nuieee-minio-dev
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     environment:
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
     volumes:
       - minio_dev_data:/data
     command: server /data --console-address ":9001"
@@ -66,14 +61,12 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
-    restart: unless-stopped
-    networks:
-      - nuieee-network
+    networks: [nuieee-dev]
 
 volumes:
   postgres_dev_data:
   minio_dev_data:
 
 networks:
-  nuieee-network:
+  nuieee-dev:
     driver: bridge

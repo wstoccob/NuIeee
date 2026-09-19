@@ -9,7 +9,7 @@ on:
       - "scripts/**"
       - "pyproject.toml"
       - "uv.lock"
-      - "Dockerfile.api"
+      - "Dockerfile"
       - "docker-compose.prod.yml"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
@@ -61,7 +61,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.api
+          file: Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}

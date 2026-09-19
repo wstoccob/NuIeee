@@ -6,6 +6,5 @@ __pycache__/
 .idea/
 backups/
 tests/
-NuIeee.*/
 dist/
 .env

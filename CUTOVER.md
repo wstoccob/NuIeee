@@ -17,9 +17,11 @@ Backups already taken: `backups/nuieee-backup-*.sql` (local) and `~/nuieee-backu
 - [x] **Step 4** — deployed; API running `ghcr.io/wstoccob/nuieee-api:sha-b116216`
 - [x] **Step 5** — frontend live on Vercel against `api.ieee.nu`
 - [x] **Step 6** — verified: 18 events, 35 photos, auth enforced, images serving
-- [ ] **Step 7** — drop the legacy tables (wait a week)
+- [x] **Step 7** — legacy tables dropped, .NET projects removed
 
-The cutover is complete. Only step 7 remains, and it is deliberately deferred.
+**The cutover is complete.** The database holds only `events`, `event_photos`, `users`
+and `alembic_version`. Legacy rows are preserved in `backups/legacy-tables-*.sql` and on
+the VPS at `~/legacy-tables-*.sql` should anything ever need checking against them.
 
 ---
 

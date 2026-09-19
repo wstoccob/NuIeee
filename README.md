@@ -1,63 +1,93 @@
-﻿# NU IEEE Website
+# NU IEEE Backend
 
-This is the official backend for the **Nazarbayev University IEEE Student Branch** website, built using **ASP.NET Core Web API**, **PostgreSQL**, and **Clean Architecture + CQRS**.
+Backend for the **Nazarbayev University IEEE Student Branch** website.
+FastAPI + PostgreSQL + MinIO. The frontend lives in
+[nuieee-client](https://github.com/wstoccob/nuieee-client) and deploys on Vercel.
 
-Frontend is written in **React + TypeScript + TailwindCSS** (hosted separately).
+## Stack
 
----
+| | |
+|---|---|
+| Python | 3.13 |
+| Framework | FastAPI |
+| Database | PostgreSQL 16 via SQLAlchemy 2 (async) + asyncpg |
+| Migrations | Alembic |
+| Auth | JWT (PyJWT) with Argon2 password hashing |
+| Object storage | MinIO, presigned uploads |
+| Tooling | uv, ruff, pytest |
 
-## 🔧 Tech Stack
+## Layout
 
-- **ASP.NET Core 8**
-- **PostgreSQL**
-- **Entity Framework Core**
-- **MediatR** (CQRS pattern)
-- **JWT Authentication**
-- **Clean Architecture**
-
----
-
-## 📂 Project Structure
-NuIeee/
- - ├── NuIeee.Domain/ → Core domain models, enums, etc.
- - ├── NuIeee.Application/ → DTOs, CQRS handlers, interfaces
- - ├── NuIeee.Infrastructure/ → EF Core, Identity, JWT logic
- - ├── NuIeee.WebApi/ → Entry point, controllers, DI setup
-
----
-
-## 🚀 Getting Started
-
-## 🛠 Prerequisites
-
-- [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-- [PostgreSQL](https://www.postgresql.org/download/)
-- [EF Core CLI tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet)
-
-## 🔑 Secrets Setup
-
-We use `UserSecrets` to store sensitive values like the JWT key.
-
-Run this to initialize secrets:
-
-```bash
-dotnet user-secrets init --project NuIeee.WebApi
-dotnet user-secrets set "Jwt:Key" "your_super_secret__jwt_key" --project NuIeee.WebApi
-dotnet user-secrets set "DefaultConnection" "your_super_secret_database_key" --project NuIeee.WebApi
 ```
-Super secret keys can be obtained in Telegram Group. Do not share them with others and do not push them to repository! 😡
-
-## 🚀 Run the project
-
-To run, you need .NET Runtime and .NET SDK 8.0
-
-```bash
-dotnet run --project .\NuIeee.WebApi\
+src/
+  main.py          app entrypoint and middleware
+  core/            config, database session, errors, security (jwt, passwords)
+  models/          SQLAlchemy tables
+  schemas/         Pydantic request and response models
+  services/        business logic as plain async functions
+  api/             dependencies and routers
+alembic/           migrations
+scripts/           one-off operational scripts
+tests/             pytest suite
 ```
 
-## 🔧 Collaborate
+Services are modules of functions rather than classes: there is no per-request state
+worth holding, so a class would only add indirection.
 
-To collaborate, create your own branch, make changes and start a Merge Request.
+## Running locally
 
-Good luck!
+```bash
+uv sync --group dev
+cp .env.example .env          # then edit
+docker compose up -d db minio # or point DATABASE_URL at your own Postgres
+uv run alembic upgrade head
+uv run uvicorn main:app --app-dir src --reload
+```
 
+API docs at http://localhost:8000/docs
+
+The whole stack (API included) runs with `docker compose up -d`.
+
+## Checks
+
+```bash
+uv run ruff check src tests scripts alembic
+uv run ruff format --check src tests scripts alembic
+uv run pytest -q
+```
+
+## API
+
+Roles are hierarchical: `superadmin` satisfies anything `admin` can do.
+
+| Method | Path | Access |
+|---|---|---|
+| POST | `/api/auth/login` | public |
+| GET | `/api/auth/me` | authenticated |
+| GET | `/api/events` (`?limit=N`) | public |
+| GET | `/api/events/{id}` | public |
+| POST | `/api/events` | admin |
+| PUT | `/api/events/{id}` | admin |
+| DELETE | `/api/events/{id}` | admin |
+| POST | `/api/storage/upload-url?filename=` | admin |
+| DELETE | `/api/storage/objects?key=` | admin |
+| GET | `/api/users`, `/api/users/{id}` | superadmin |
+| POST | `/api/users` | superadmin |
+| DELETE | `/api/users/{id}` | superadmin |
+| GET | `/health` | public |
+
+There is no public registration endpoint. Accounts are created by a superadmin.
+
+Photo uploads are two-step: ask `/api/storage/upload-url` for a presigned URL, PUT the
+file straight to MinIO, then send the returned `publicUrl` as part of the event payload.
+
+## Deployment
+
+Pushing to `main` runs lint and tests, builds an image tagged with the commit SHA, pushes
+it to GHCR, syncs the VPS from git, runs migrations as a one-shot container, then starts
+the API and polls `/health`, rolling back automatically if it does not come up.
+
+Never edit `docker-compose.prod.yml` on the server: the deploy resets the checkout to
+`origin/main` and your change would be lost.
+
+Secrets live in `.env` on the VPS and are not in this repository.

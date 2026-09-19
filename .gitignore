@@ -1,14 +1,14 @@
-bin/
-obj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
-.idea
-*.user
-.env
 # Python
 .venv/
 __pycache__/
 *.pyc
-backups/
+.pytest_cache/
+.ruff_cache/
+
+# Environment and local data
 .env
+backups/
+
+# Editors
+.idea/
+*.user
