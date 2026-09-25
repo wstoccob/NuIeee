@@ -184,7 +184,3 @@ cd ~/apps/backend/NuIeee
 git checkout HEAD~1 -- docker-compose.prod.yml
 docker compose -f docker-compose.prod.yml up -d
 ```
-
-Migration applied. Generated passwords (save these now):
-  superadmin   cjnG2lR7a6FnXjbOOBOzZQ
-  admin        9-_whrbjzGicdIbH_vURZw
