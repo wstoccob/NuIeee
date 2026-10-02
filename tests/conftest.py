@@ -2,11 +2,18 @@ import os
 import sys
 from pathlib import Path
 
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://postgres:pw@localhost:5432/nuieee")
-os.environ.setdefault("JWT_SECRET", "test-secret-key-at-least-32-chars-long")
-os.environ.setdefault("MINIO_ENDPOINT", "localhost:9000")
-os.environ.setdefault("MINIO_ACCESS_KEY", "key")
-os.environ.setdefault("MINIO_SECRET_KEY", "secret")
+# Never read a developer's .env: tests assert against these exact values, and a
+# local .env copied from .env.example would silently override them.
+os.environ["ENV_FILE"] = ""
+os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:pw@localhost:5432/nuieee"
+os.environ["JWT_SECRET"] = "test-secret-key-at-least-32-chars-long"
+os.environ["MINIO_ENDPOINT"] = "localhost:9000"
+os.environ["MINIO_ACCESS_KEY"] = "key"
+os.environ["MINIO_SECRET_KEY"] = "secret"
+os.environ.pop("CORS_ORIGINS", None)
+os.environ.pop("CORS_ORIGIN_REGEX", None)
+os.environ.pop("MINIO_PUBLIC_BASE_URL", None)
+os.environ.pop("MINIO_BUCKET", None)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -114,3 +121,60 @@ async def create_big_event(session):
         return event
 
     return _create
+
+
+class FakeStorage:
+    """In-memory stand-in for the private MinIO bucket."""
+
+    def __init__(self) -> None:
+        self.objects: dict[str, tuple[int, str, object]] = {}
+        self.deleted: list[str] = []
+
+    def put(self, key: str, size: int = 1024, uploaded_at=None) -> None:
+        from datetime import UTC, datetime
+
+        content_type = "application/pdf" if key.endswith(".pdf") else "application/octet-stream"
+        self.objects[key] = (size, content_type, uploaded_at or datetime.now(UTC))
+
+    async def upload_form(self, key: str, content_type: str, max_bytes: int) -> dict:
+        return {
+            "key": key,
+            "Content-Type": content_type,
+            "policy": "test",
+            "x-amz-signature": "sig",
+        }
+
+    async def stat(self, key: str):
+        from services.storage import StoredObject
+
+        if key not in self.objects:
+            return None
+        size, content_type, uploaded_at = self.objects[key]
+        return StoredObject(size, content_type, uploaded_at)
+
+    async def download_url(self, key: str, name: str) -> str:
+        return f"https://storage.test/{key}?download={name}"
+
+    async def delete(self, key: str) -> None:
+        self.objects.pop(key, None)
+        self.deleted.append(key)
+
+    async def delete_prefix(self, prefix: str) -> None:
+        for key in [k for k in self.objects if k.startswith(prefix)]:
+            await self.delete(key)
+
+
+@pytest.fixture
+def fake_storage(monkeypatch) -> FakeStorage:
+    from services import storage
+
+    fake = FakeStorage()
+    monkeypatch.setattr(storage, "private_upload_form", fake.upload_form)
+    monkeypatch.setattr(
+        storage, "private_bucket_url", lambda: "https://storage.test/hackathon-files"
+    )
+    monkeypatch.setattr(storage, "stat_private", fake.stat)
+    monkeypatch.setattr(storage, "private_download_url", fake.download_url)
+    monkeypatch.setattr(storage, "delete_private", fake.delete)
+    monkeypatch.setattr(storage, "delete_private_prefix", fake.delete_prefix)
+    return fake
