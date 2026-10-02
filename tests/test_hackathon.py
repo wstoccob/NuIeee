@@ -537,3 +537,40 @@ async def test_deleting_an_event_removes_its_files(
         await client.delete(f"/api/admin/big-events/{event.id}", headers=headers)
     ).status_code == 204
     assert list(fake_storage.objects) == ["big-events/someone-else/submissions/t/keep.pdf"]
+
+
+# --- bot protection ----------------------------------------------------------------
+
+
+async def test_honeypot_rejects_bots(client, make_event):
+    await make_event()
+    res = await register(client, website="http://spam.example")
+    assert res.status_code == 422
+    assert "verification" in res.json()["detail"]
+
+
+async def test_turnstile_required_when_configured(client, make_event, monkeypatch):
+    from services import turnstile
+
+    await make_event()
+    monkeypatch.setattr(turnstile.settings, "turnstile_secret", "secret")
+    monkeypatch.setattr(turnstile, "_post", lambda token: {"success": token == "good"})
+
+    assert (await register(client)).status_code == 422, "missing token must fail"
+    assert (await register(client, turnstileToken="bad")).status_code == 422
+    assert (await register(client, turnstileToken="good")).status_code == 201
+
+
+async def test_turnstile_outage_does_not_block_registration(client, make_event, monkeypatch):
+    import urllib.error
+
+    from services import turnstile
+
+    await make_event()
+    monkeypatch.setattr(turnstile.settings, "turnstile_secret", "secret")
+
+    def boom(token):
+        raise urllib.error.URLError("cloudflare down")
+
+    monkeypatch.setattr(turnstile, "_post", boom)
+    assert (await register(client, turnstileToken="anything")).status_code == 201

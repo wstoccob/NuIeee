@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     submission_max_bytes: int = 50 * 1024 * 1024
     case_attachment_max_bytes: int = 50 * 1024 * 1024
 
+    # Cloudflare Turnstile. Unset means registration runs without a bot check.
+    turnstile_secret: str | None = None
+
     @cached_property
     def dsn(self) -> str:
         return str(self.database_url)

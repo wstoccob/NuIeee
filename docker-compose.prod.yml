@@ -37,6 +37,8 @@ services:
       MINIO_BUCKET: event-photos
       MINIO_SECURE: "true"
       MINIO_PUBLIC_BASE_URL: https://minio.ieee.nu
+      # Optional. Empty disables the registration bot check.
+      TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
     depends_on:
       migrate:
         condition: service_completed_successfully

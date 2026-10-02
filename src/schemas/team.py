@@ -50,6 +50,9 @@ class TeamRegistration(CamelModel):
     team_name: str = Field(min_length=2, max_length=100)
     members: list[MemberInput] = Field(min_length=1, max_length=20)
     consent: Literal[True]
+    turnstile_token: str | None = Field(default=None, max_length=4096)
+    # Honeypot: hidden from people, so only bots fill it in.
+    website: str = Field(default="", max_length=255)
 
     @field_validator("team_name")
     @classmethod
