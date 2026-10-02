@@ -12,3 +12,6 @@ backups/
 # Editors
 .idea/
 *.user
+
+# Personal working notes and session handoffs
+local/

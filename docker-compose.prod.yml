@@ -37,6 +37,14 @@ services:
       MINIO_BUCKET: event-photos
       MINIO_SECURE: "true"
       MINIO_PUBLIC_BASE_URL: https://minio.ieee.nu
+      # Optional. Empty disables the registration bot check.
+      TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
+      # Optional outgoing mail (team links). Empty SMTP_HOST disables sending.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     depends_on:
       migrate:
         condition: service_completed_successfully
