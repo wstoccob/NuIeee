@@ -40,6 +40,9 @@ class Settings(BaseSettings):
 
     # Cloudflare Turnstile. Unset means registration runs without a bot check.
     turnstile_secret: str | None = None
+    turnstile_action: str = "hackathon-register"
+    # Empty list skips the hostname check (local testing with Cloudflare's test keys).
+    turnstile_hostnames: list[str] = ["ieee.nu", "www.ieee.nu"]
 
     @cached_property
     def dsn(self) -> str:

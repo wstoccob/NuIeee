@@ -15,8 +15,19 @@ _VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 def _post(token: str) -> dict:
     data = urllib.parse.urlencode({"secret": settings.turnstile_secret, "response": token})
     request = urllib.request.Request(_VERIFY_URL, data=data.encode(), method="POST")
-    with urllib.request.urlopen(request, timeout=5) as response:
+    with urllib.request.urlopen(request, timeout=10) as response:
         return json.loads(response.read().decode())
+
+
+def _accepted(result: dict) -> bool:
+    if not result.get("success"):
+        return False
+    # The site key is public, so a token solved on someone else's page would otherwise
+    # pass. Pinning action and hostname ties the token to our registration form.
+    if result.get("action") != settings.turnstile_action:
+        return False
+    allowed = settings.turnstile_hostnames
+    return not allowed or result.get("hostname") in allowed
 
 
 async def verify(token: str | None) -> bool:
@@ -34,6 +45,13 @@ async def verify(token: str | None) -> bool:
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
         logger.exception("turnstile verification unavailable, allowing registration")
         return True
-    if not result.get("success"):
-        logger.info("turnstile rejected a registration: %s", result.get("error-codes"))
-    return bool(result.get("success"))
+    accepted = _accepted(result)
+    if not accepted:
+        logger.info(
+            "turnstile rejected: success=%s action=%s hostname=%s errors=%s",
+            result.get("success"),
+            result.get("action"),
+            result.get("hostname"),
+            result.get("error-codes"),
+        )
+    return accepted

@@ -554,10 +554,24 @@ async def test_turnstile_required_when_configured(client, make_event, monkeypatc
 
     await make_event()
     monkeypatch.setattr(turnstile.settings, "turnstile_secret", "secret")
-    monkeypatch.setattr(turnstile, "_post", lambda token: {"success": token == "good"})
+    monkeypatch.setattr(
+        turnstile,
+        "_post",
+        lambda token: {
+            "success": token != "bad",
+            "action": "other-form" if token == "wrong-action" else "hackathon-register",
+            "hostname": "evil.example" if token == "wrong-host" else "ieee.nu",
+        },
+    )
 
     assert (await register(client)).status_code == 422, "missing token must fail"
     assert (await register(client, turnstileToken="bad")).status_code == 422
+    assert (await register(client, turnstileToken="wrong-action")).status_code == 422, (
+        "a token solved on a different form must not count"
+    )
+    assert (await register(client, turnstileToken="wrong-host")).status_code == 422, (
+        "a token solved on another site with our public key must not count"
+    )
     assert (await register(client, turnstileToken="good")).status_code == 201
 
 
