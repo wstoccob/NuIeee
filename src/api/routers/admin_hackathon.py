@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, BackgroundTasks, status
 from fastapi.responses import StreamingResponse
 
 from api.deps import RequireAdmin, SessionDep
@@ -20,7 +20,7 @@ from schemas.team import (
 )
 from services import big_events as big_event_service
 from services import cases as case_service
-from services import exports
+from services import email, exports, notifications
 from services import submissions as submission_service
 from services import teams as team_service
 
@@ -172,9 +172,17 @@ async def export_teams(event_id: uuid.UUID, session: SessionDep) -> StreamingRes
 
 
 @router.post("/teams/{team_id}/access-token", response_model=AccessTokenIssued)
-async def rotate_team_link(team_id: uuid.UUID, session: SessionDep) -> AccessTokenIssued:
-    token = await team_service.rotate_token(session, await _team(session, team_id))
-    return AccessTokenIssued(access_token=token)
+async def rotate_team_link(
+    team_id: uuid.UUID, session: SessionDep, background: BackgroundTasks
+) -> AccessTokenIssued:
+    team = await _team(session, team_id)
+    event = await _event(session, team.big_event_id)
+    token = await team_service.rotate_token(session, team)
+    emailed = email.is_configured()
+    if emailed:
+        message = notifications.team_link_email(team, event, token, rotated=True)
+        background.add_task(email.send, *message)
+    return AccessTokenIssued(access_token=token, link_emailed=emailed)
 
 
 @router.delete("/teams/{team_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -38,6 +38,18 @@ class Settings(BaseSettings):
     submission_max_bytes: int = 50 * 1024 * 1024
     case_attachment_max_bytes: int = 50 * 1024 * 1024
 
+    # Outgoing mail over plain SMTP, so the provider (Gmail app password, Resend, ...) is
+    # configuration only. Unset host or sender means emails are skipped.
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    mail_from: str | None = None
+    # Public site used to build links inside emails.
+    public_site_url: str = "https://ieee.nu"
+    # Emails are read on phones with no notion of the sender's zone, so state one.
+    mail_time_zone: str = "Asia/Almaty"
+
     # Cloudflare Turnstile. Unset means registration runs without a bot check.
     turnstile_secret: str | None = None
     turnstile_action: str = "hackathon-register"

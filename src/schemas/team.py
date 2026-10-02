@@ -63,6 +63,8 @@ class TeamRegistration(CamelModel):
 class RegistrationResult(CamelModel):
     team_id: uuid.UUID
     access_token: str
+    # True when an email with the link was queued; the page can say "check your inbox".
+    link_emailed: bool = False
 
 
 class MemberRead(CamelModel):
@@ -138,3 +140,4 @@ class AdminTeamRead(CamelModel):
 
 class AccessTokenIssued(CamelModel):
     access_token: str
+    link_emailed: bool = False

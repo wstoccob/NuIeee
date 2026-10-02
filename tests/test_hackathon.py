@@ -588,3 +588,84 @@ async def test_turnstile_outage_does_not_block_registration(client, make_event, 
 
     monkeypatch.setattr(turnstile, "_post", boom)
     assert (await register(client, turnstileToken="anything")).status_code == 201
+
+
+# --- team link emails --------------------------------------------------------------
+
+
+@pytest.fixture
+def outbox(monkeypatch):
+    """Capture mail at the SMTP boundary so composition and sending really run."""
+    from services import email
+
+    sent = []
+    monkeypatch.setattr(email.settings, "smtp_host", "smtp.test")
+    monkeypatch.setattr(email.settings, "mail_from", "NU IEEE <ieee@nu.edu.kz>")
+    monkeypatch.setattr(email, "_deliver", sent.append)
+    return sent
+
+
+def _body(message, subtype: str) -> str:
+    return message.get_body(preferencelist=(subtype,)).get_content()
+
+
+async def test_registration_emails_the_link_to_every_member(client, make_event, outbox):
+    await make_event(case_selection_opens_at=NOW + 24 * HOUR)
+    res = await register(client)
+    assert res.json()["linkEmailed"] is True
+
+    assert len(outbox) == 1
+    message = outbox[0]
+    assert message["To"] == "aruzhan@nu.edu.kz, dias@nu.edu.kz"
+    assert message["From"] == "NU IEEE <ieee@nu.edu.kz>"
+    link = f"https://ieee.nu/hackathon/team#{res.json()['accessToken']}"
+    assert link in _body(message, "plain")
+    assert link in _body(message, "html")
+    assert "Case selection opens" in _body(message, "plain")
+
+
+async def test_no_email_when_mail_is_not_configured(client, make_event):
+    await make_event()
+    res = await register(client)
+    assert res.status_code == 201
+    assert res.json()["linkEmailed"] is False
+
+
+async def test_mail_failure_never_breaks_registration(client, make_event, monkeypatch):
+    from services import email
+
+    await make_event()
+    monkeypatch.setattr(email.settings, "smtp_host", "smtp.test")
+    monkeypatch.setattr(email.settings, "mail_from", "ieee@nu.edu.kz")
+
+    def refuse(message):
+        raise ConnectionRefusedError("smtp down")
+
+    monkeypatch.setattr(email, "_deliver", refuse)
+    assert (await register(client)).status_code == 201
+
+
+async def test_team_name_is_escaped_in_html_email(client, make_event, outbox):
+    await make_event()
+    await registered_token(client, team="<script>alert(1)</script>")
+    html = _body(outbox[0], "html")
+    assert "<script>" not in html
+    assert "&lt;script&gt;" in html
+
+
+async def test_rotated_link_is_emailed_and_says_the_old_one_is_dead(
+    client, admin, auth_header, make_event, outbox
+):
+    event = await make_event()
+    await registered_token(client)
+    teams = (
+        await client.get(f"/api/admin/big-events/{event.id}/teams", headers=auth_header(admin))
+    ).json()
+
+    res = await client.post(
+        f"/api/admin/teams/{teams[0]['id']}/access-token", headers=auth_header(admin)
+    )
+    assert res.json()["linkEmailed"] is True
+    assert len(outbox) == 2
+    assert res.json()["accessToken"] in _body(outbox[1], "plain")
+    assert "no longer works" in _body(outbox[1], "plain")
