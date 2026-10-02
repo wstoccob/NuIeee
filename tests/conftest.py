@@ -75,3 +75,42 @@ def auth_header():
         return {"Authorization": f"Bearer {token}"}
 
     return _header
+
+
+@pytest_asyncio.fixture
+async def create_big_event(session):
+    from datetime import UTC, datetime, timedelta
+
+    from models.big_event import BigEvent, BigEventKind, BigEventStatus
+
+    async def _create(
+        *,
+        slug: str,
+        status: str = "published",
+        is_featured: bool = False,
+        title: str = "Test Event",
+        kind: BigEventKind = BigEventKind.hackathon,
+        starts_at=None,
+        ends_at=None,
+        registration_opens_at=None,
+        registration_closes_at=None,
+    ) -> BigEvent:
+        now = datetime.now(UTC)
+        event = BigEvent(
+            slug=slug,
+            title=title,
+            kind=kind,
+            description="",
+            status=BigEventStatus(status),
+            is_featured=is_featured,
+            starts_at=starts_at or now,
+            ends_at=ends_at or now + timedelta(days=1),
+            registration_opens_at=registration_opens_at or now,
+            registration_closes_at=registration_closes_at or now + timedelta(hours=1),
+        )
+        session.add(event)
+        await session.commit()
+        await session.refresh(event)
+        return event
+
+    return _create
