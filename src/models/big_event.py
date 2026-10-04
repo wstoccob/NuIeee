@@ -42,6 +42,9 @@ class BigEvent(TimestampedBase):
     registration_opens_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     registration_closes_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     capacity: Mapped[int | None] = mapped_column(Integer, default=None)
+
+    min_team_size: Mapped[int] = mapped_column(Integer, default=4, server_default="4")
+    max_team_size: Mapped[int] = mapped_column(Integer, default=5, server_default="5")
     status: Mapped[BigEventStatus] = mapped_column(
         Enum(BigEventStatus, name="big_event_status", native_enum=False),
         default=BigEventStatus.draft,

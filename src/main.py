@@ -1,10 +1,12 @@
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from api.router import api_router
 from core.config import settings
+from core.errors import DomainError
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,6 +22,11 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+
+@app.exception_handler(DomainError)
+async def domain_error_handler(_: Request, exc: DomainError) -> JSONResponse:
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
 @app.get("/health", tags=["ops"])

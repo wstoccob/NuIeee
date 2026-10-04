@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from core.config import settings
-from models import big_event, event, user  # noqa: F401  (register tables on Base.metadata)
+from models import big_event, event, team, user  # noqa: F401  (register tables on Base.metadata)
 from models.base import Base
 
 config = context.config

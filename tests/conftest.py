@@ -2,11 +2,18 @@ import os
 import sys
 from pathlib import Path
 
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://postgres:pw@localhost:5432/nuieee")
-os.environ.setdefault("JWT_SECRET", "test-secret-key-at-least-32-chars-long")
-os.environ.setdefault("MINIO_ENDPOINT", "localhost:9000")
-os.environ.setdefault("MINIO_ACCESS_KEY", "key")
-os.environ.setdefault("MINIO_SECRET_KEY", "secret")
+# Never read a developer's .env: tests assert against these exact values, and a
+# local .env copied from .env.example would silently override them.
+os.environ["ENV_FILE"] = ""
+os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:pw@localhost:5432/nuieee"
+os.environ["JWT_SECRET"] = "test-secret-key-at-least-32-chars-long"
+os.environ["MINIO_ENDPOINT"] = "localhost:9000"
+os.environ["MINIO_ACCESS_KEY"] = "key"
+os.environ["MINIO_SECRET_KEY"] = "secret"
+os.environ.pop("CORS_ORIGINS", None)
+os.environ.pop("CORS_ORIGIN_REGEX", None)
+os.environ.pop("MINIO_PUBLIC_BASE_URL", None)
+os.environ.pop("MINIO_BUCKET", None)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
