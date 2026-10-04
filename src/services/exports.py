@@ -15,10 +15,6 @@ YEAR_LABELS = {
 HEADERS = [
     "Team",
     "Registered at (UTC)",
-    "Case company",
-    "Case title",
-    "Submitted",
-    "Submission file",
     "Member #",
     "Captain",
     "Full name",
@@ -38,15 +34,7 @@ def _safe(value: object) -> str:
 
 
 def _rows(team: Team) -> Iterator[list[str]]:
-    case, submission = team.case, team.submission
-    team_cells = [
-        team.name,
-        team.created_at.strftime("%Y-%m-%d %H:%M"),
-        case.company if case else "",
-        case.title if case else "",
-        "yes" if submission else "no",
-        submission.original_filename if submission else "",
-    ]
+    team_cells = [team.name, team.created_at.strftime("%Y-%m-%d %H:%M")]
     for number, member in enumerate(team.members, start=1):
         yield [
             *team_cells,

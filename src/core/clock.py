@@ -14,8 +14,5 @@ def as_utc(value: datetime) -> datetime:
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value
 
 
-def within(start: datetime | None, end: datetime | None, now: datetime | None = None) -> bool:
-    if start is None or end is None:
-        return False
-    moment = now or utcnow()
-    return as_utc(start) <= moment <= as_utc(end)
+def within(start: datetime, end: datetime) -> bool:
+    return as_utc(start) <= utcnow() <= as_utc(end)

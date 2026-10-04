@@ -1,27 +1,16 @@
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, status
+from fastapi import APIRouter, status
 from fastapi.responses import StreamingResponse
 
 from api.deps import RequireAdmin, SessionDep
 from core.errors import NotFoundError
 from models.big_event import BigEvent
-from models.case import Case
 from models.team import Team
 from schemas.big_event import BigEventAdminRead, BigEventWrite
-from schemas.case import CaseRead, CaseWrite
-from schemas.team import (
-    AccessTokenIssued,
-    AdminTeamRead,
-    DownloadLink,
-    PostUploadTarget,
-    UploadConfirm,
-    UploadRequest,
-)
+from schemas.team import AdminTeamRead
 from services import big_events as big_event_service
-from services import cases as case_service
-from services import email, exports, notifications
-from services import submissions as submission_service
+from services import exports
 from services import teams as team_service
 
 router = APIRouter(prefix="/admin", tags=["admin: hackathons"], dependencies=[RequireAdmin])
@@ -32,13 +21,6 @@ async def _event(session: SessionDep, event_id: uuid.UUID) -> BigEvent:
     if event is None:
         raise NotFoundError("Event not found")
     return event
-
-
-async def _case(session: SessionDep, case_id: uuid.UUID) -> Case:
-    case = await case_service.get_case(session, case_id)
-    if case is None:
-        raise NotFoundError("Case not found")
-    return case
 
 
 async def _team(session: SessionDep, team_id: uuid.UUID) -> Team:
@@ -88,67 +70,6 @@ async def delete_event(event_id: uuid.UUID, session: SessionDep) -> None:
     await big_event_service.delete_big_event(session, await _event(session, event_id))
 
 
-# --- cases ---------------------------------------------------------------------------
-
-
-@router.get("/big-events/{event_id}/cases", response_model=list[CaseRead])
-async def list_cases(event_id: uuid.UUID, session: SessionDep) -> list[CaseRead]:
-    event = await _event(session, event_id)
-    return [
-        CaseRead.model_validate(case) for case in await case_service.list_cases(session, event.id)
-    ]
-
-
-@router.post(
-    "/big-events/{event_id}/cases", response_model=CaseRead, status_code=status.HTTP_201_CREATED
-)
-async def create_case(event_id: uuid.UUID, payload: CaseWrite, session: SessionDep) -> CaseRead:
-    case = await case_service.create_case(session, await _event(session, event_id), payload)
-    return CaseRead.model_validate(case)
-
-
-@router.put("/cases/{case_id}", response_model=CaseRead)
-async def update_case(case_id: uuid.UUID, payload: CaseWrite, session: SessionDep) -> CaseRead:
-    case = await case_service.update_case(session, await _case(session, case_id), payload)
-    return CaseRead.model_validate(case)
-
-
-@router.delete("/cases/{case_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_case(case_id: uuid.UUID, session: SessionDep) -> None:
-    await case_service.delete_case(session, await _case(session, case_id))
-
-
-@router.post("/cases/{case_id}/attachment/upload-target", response_model=PostUploadTarget)
-async def case_attachment_upload_target(
-    case_id: uuid.UUID, payload: UploadRequest, session: SessionDep
-) -> PostUploadTarget:
-    case = await _case(session, case_id)
-    form = await case_service.attachment_upload_form(case, payload.filename, payload.size_bytes)
-    return PostUploadTarget(**form)
-
-
-@router.put("/cases/{case_id}/attachment", response_model=CaseRead)
-async def confirm_case_attachment(
-    case_id: uuid.UUID, payload: UploadConfirm, session: SessionDep
-) -> CaseRead:
-    case = await case_service.attach_file(
-        session, await _case(session, case_id), payload.object_key, payload.filename
-    )
-    return CaseRead.model_validate(case)
-
-
-@router.delete("/cases/{case_id}/attachment", response_model=CaseRead)
-async def remove_case_attachment(case_id: uuid.UUID, session: SessionDep) -> CaseRead:
-    case = await case_service.remove_attachment(session, await _case(session, case_id))
-    return CaseRead.model_validate(case)
-
-
-@router.get("/cases/{case_id}/attachment", response_model=DownloadLink)
-async def download_case_attachment(case_id: uuid.UUID, session: SessionDep) -> DownloadLink:
-    case = await _case(session, case_id)
-    return DownloadLink(url=await case_service.attachment_download_url(case))
-
-
 # --- teams ---------------------------------------------------------------------------
 
 
@@ -171,25 +92,6 @@ async def export_teams(event_id: uuid.UUID, session: SessionDep) -> StreamingRes
     )
 
 
-@router.post("/teams/{team_id}/access-token", response_model=AccessTokenIssued)
-async def rotate_team_link(
-    team_id: uuid.UUID, session: SessionDep, background: BackgroundTasks
-) -> AccessTokenIssued:
-    team = await _team(session, team_id)
-    event = await _event(session, team.big_event_id)
-    token = await team_service.rotate_token(session, team)
-    emailed = email.is_configured()
-    if emailed:
-        message = notifications.team_link_email(team, event, token, rotated=True)
-        background.add_task(email.send, *message)
-    return AccessTokenIssued(access_token=token, link_emailed=emailed)
-
-
 @router.delete("/teams/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_team(team_id: uuid.UUID, session: SessionDep) -> None:
     await team_service.delete_team(session, await _team(session, team_id))
-
-
-@router.get("/teams/{team_id}/submission", response_model=DownloadLink)
-async def download_submission(team_id: uuid.UUID, session: SessionDep) -> DownloadLink:
-    return DownloadLink(url=await submission_service.download_url(await _team(session, team_id)))

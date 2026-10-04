@@ -4,7 +4,7 @@ from typing import Self
 
 from pydantic import AwareDatetime, Field, computed_field, model_validator
 
-from core.clock import as_utc, utcnow, within
+from core.clock import within
 from models.big_event import BigEventKind, BigEventStatus
 from schemas.base import CamelModel
 
@@ -26,38 +26,13 @@ class BigEventRead(CamelModel):
     status: BigEventStatus
     min_team_size: int
     max_team_size: int
-    case_selection_opens_at: datetime | None
-    submissions_open_at: datetime | None
-    submissions_close_at: datetime | None
-
-    def _is_published(self) -> bool:
-        return self.status == BigEventStatus.published
 
     @computed_field
     @property
     def registration_open(self) -> bool:
-        return self._is_published() and within(
+        return self.status == BigEventStatus.published and within(
             self.registration_opens_at, self.registration_closes_at
         )
-
-    @computed_field
-    @property
-    def cases_visible(self) -> bool:
-        opens = self.case_selection_opens_at
-        return self._is_published() and opens is not None and utcnow() >= as_utc(opens)
-
-    @computed_field
-    @property
-    def case_selection_open(self) -> bool:
-        if not self.cases_visible:
-            return False
-        closes = self.submissions_close_at
-        return closes is None or utcnow() <= as_utc(closes)
-
-    @computed_field
-    @property
-    def submissions_open(self) -> bool:
-        return self._is_published() and within(self.submissions_open_at, self.submissions_close_at)
 
 
 class BigEventAdminRead(BigEventRead):
@@ -80,9 +55,6 @@ class BigEventWrite(CamelModel):
     is_featured: bool = False
     min_team_size: int = Field(default=4, ge=1, le=20)
     max_team_size: int = Field(default=5, ge=1, le=20)
-    case_selection_opens_at: AwareDatetime | None = None
-    submissions_open_at: AwareDatetime | None = None
-    submissions_close_at: AwareDatetime | None = None
 
     @model_validator(mode="after")
     def check_windows(self) -> Self:
@@ -92,8 +64,4 @@ class BigEventWrite(CamelModel):
             raise ValueError("Registration must close after it opens")
         if self.min_team_size > self.max_team_size:
             raise ValueError("Minimum team size cannot exceed the maximum")
-        if (self.submissions_open_at is None) != (self.submissions_close_at is None):
-            raise ValueError("Set both submission dates, or neither")
-        if self.submissions_open_at and self.submissions_close_at <= self.submissions_open_at:
-            raise ValueError("Submissions must close after they open")
         return self

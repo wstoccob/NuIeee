@@ -8,8 +8,6 @@ from core.errors import ConflictError
 from models.big_event import BigEvent, BigEventStatus
 from models.team import Team
 from schemas.big_event import BigEventWrite
-from services import storage
-from services.uploads import event_prefix
 
 
 async def get_featured_big_event(session: AsyncSession) -> BigEvent | None:
@@ -73,11 +71,8 @@ async def update_big_event(
 
 
 async def delete_big_event(session: AsyncSession, event: BigEvent) -> None:
-    event_id = event.id
     await session.delete(event)
     await session.commit()
-    # Database rows cascade; files have to be removed explicitly.
-    await storage.delete_private_prefix(event_prefix(event_id))
 
 
 async def _unfeature_others(session: AsyncSession, keep: uuid.UUID | None) -> None:

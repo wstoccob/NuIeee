@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Response, status
+from fastapi import APIRouter, Response, status
 
 from api.deps import SessionDep
 from core.errors import InvalidError, not_found
@@ -6,8 +6,8 @@ from models.big_event import BigEventStatus
 from schemas.big_event import BigEventRead
 from schemas.team import RegistrationResult, TeamRegistration
 from services import big_events as big_event_service
-from services import email, notifications, turnstile
 from services import teams as team_service
+from services import turnstile
 
 router = APIRouter(prefix="/big-events", tags=["big-events"])
 
@@ -36,7 +36,7 @@ async def get_big_event_by_slug(slug: str, session: SessionDep) -> BigEventRead:
     "/{slug}/teams", response_model=RegistrationResult, status_code=status.HTTP_201_CREATED
 )
 async def register_team(
-    slug: str, payload: TeamRegistration, session: SessionDep, background: BackgroundTasks
+    slug: str, payload: TeamRegistration, session: SessionDep
 ) -> RegistrationResult:
     event = await big_event_service.get_big_event_by_slug(session, slug)
     if event is None or event.status != BigEventStatus.published:
@@ -45,8 +45,5 @@ async def register_team(
     # a hidden field, and a silently dropped human registration is worse than a bot.
     if payload.website or not await turnstile.verify(payload.turnstile_token):
         raise InvalidError("Please complete the verification and try again")
-    team, token = await team_service.register_team(session, event, payload)
-    emailed = email.is_configured()
-    if emailed:
-        background.add_task(email.send, *notifications.team_link_email(team, event, token))
-    return RegistrationResult(team_id=team.id, access_token=token, link_emailed=emailed)
+    team = await team_service.register_team(session, event, payload)
+    return RegistrationResult(team_id=team.id)

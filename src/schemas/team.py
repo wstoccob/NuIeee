@@ -7,8 +7,6 @@ from pydantic import Field, field_validator
 
 from models.team import YearOfStudy
 from schemas.base import CamelModel
-from schemas.big_event import BigEventRead
-from schemas.case import CaseRead
 
 _EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -62,9 +60,6 @@ class TeamRegistration(CamelModel):
 
 class RegistrationResult(CamelModel):
     team_id: uuid.UUID
-    access_token: str
-    # True when an email with the link was queued; the page can say "check your inbox".
-    link_emailed: bool = False
 
 
 class MemberRead(CamelModel):
@@ -76,68 +71,8 @@ class MemberRead(CamelModel):
     is_captain: bool
 
 
-class SubmissionRead(CamelModel):
-    original_filename: str
-    content_type: str
-    size_bytes: int
-    submitted_at: datetime
-
-
-class TeamDashboard(CamelModel):
-    id: uuid.UUID
-    name: str
-    created_at: datetime
-    members: list[MemberRead]
-    event: BigEventRead
-    case: CaseRead | None
-    cases: list[CaseRead]
-    submission: SubmissionRead | None
-    submission_max_bytes: int
-
-
-class CaseChoice(CamelModel):
-    case_id: uuid.UUID
-
-
-class UploadRequest(CamelModel):
-    filename: str = Field(min_length=1, max_length=255)
-    size_bytes: int = Field(gt=0)
-
-
-class PostUploadTarget(CamelModel):
-    """Everything the browser needs for a presigned POST straight to object storage.
-
-    `fields` must be sent as multipart form fields, in order, before the file itself.
-    """
-
-    url: str
-    fields: dict[str, str]
-    object_key: str
-    max_bytes: int
-
-
-class UploadConfirm(CamelModel):
-    object_key: str = Field(min_length=1)
-    filename: str = Field(min_length=1, max_length=255)
-
-
-class DownloadLink(CamelModel):
-    url: str
-
-
-class AdminSubmissionRead(SubmissionRead):
-    id: uuid.UUID
-
-
 class AdminTeamRead(CamelModel):
     id: uuid.UUID
     name: str
     created_at: datetime
     members: list[MemberRead]
-    case: CaseRead | None
-    submission: AdminSubmissionRead | None
-
-
-class AccessTokenIssued(CamelModel):
-    access_token: str
-    link_emailed: bool = False

@@ -45,17 +45,6 @@ class BigEvent(TimestampedBase):
 
     min_team_size: Mapped[int] = mapped_column(Integer, default=4, server_default="4")
     max_team_size: Mapped[int] = mapped_column(Integer, default=5, server_default="5")
-    # Cases usually arrive from companies on the day, so selection opens separately
-    # from registration. Null means cases are hidden from teams.
-    case_selection_opens_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=None
-    )
-    submissions_open_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=None
-    )
-    submissions_close_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=None
-    )
     status: Mapped[BigEventStatus] = mapped_column(
         Enum(BigEventStatus, name="big_event_status", native_enum=False),
         default=BigEventStatus.draft,
