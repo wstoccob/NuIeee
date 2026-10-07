@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 
 from api.deps import RequireAdmin, SessionDep
 from core.errors import NotFoundError
@@ -89,6 +89,17 @@ async def export_teams(event_id: uuid.UUID, session: SessionDep) -> StreamingRes
         exports.teams_csv(teams),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{event.slug}-teams.csv"'},
+    )
+
+
+@router.get("/big-events/{event_id}/teams.xlsx")
+async def export_teams_excel(event_id: uuid.UUID, session: SessionDep) -> Response:
+    event = await _event(session, event_id)
+    teams = await team_service.list_teams(session, event.id)
+    return Response(
+        exports.teams_xlsx(teams),
+        media_type=exports.XLSX_MEDIA_TYPE,
+        headers={"Content-Disposition": f'attachment; filename="{event.slug}-teams.xlsx"'},
     )
 
 

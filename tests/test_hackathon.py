@@ -267,6 +267,35 @@ async def test_admin_team_list_and_csv(client, admin, auth_header, make_event):
     assert "Case" not in header and "Submi" not in header
 
 
+async def test_admin_excel_export(client, admin, auth_header, make_event):
+    import io
+    import re
+    import zipfile
+
+    event = await make_event()
+    people = [member("=HYPERLINK(evil)", "a@nu.edu.kz", True), member("Дана", "b@nu.edu.kz")]
+    await registered(client, team="Команда", members=people)
+    url = f"/api/admin/big-events/{event.id}/teams.xlsx"
+
+    assert (await client.get(url)).status_code == 401
+    res = await client.get(url, headers=auth_header(admin))
+    assert res.status_code == 200
+    assert res.headers["content-type"].startswith("application/vnd.openxmlformats")
+    assert 'filename="hack-2026-teams.xlsx"' in res.headers["content-disposition"]
+
+    book = zipfile.ZipFile(io.BytesIO(res.content))
+    workbook = book.read("xl/workbook.xml").decode()
+    assert 'name="Participants"' in workbook and 'name="Teams"' in workbook
+    strings = book.read("xl/sharedStrings.xml").decode()
+    assert "Команда" in strings and "Дана" in strings
+    assert "=HYPERLINK(evil)" in strings, "participant text is stored as plain text"
+    participants = book.read("xl/worksheets/sheet1.xml").decode()
+    assert "<f>" not in participants, "no cell may hold a formula"
+    assert len(re.findall(r"<row ", participants)) == 3, "header plus one row per member"
+    teams_sheet = book.read("xl/worksheets/sheet2.xml").decode()
+    assert len(re.findall(r"<row ", teams_sheet)) == 2, "header plus one row per team"
+
+
 async def test_admin_deletes_a_team(client, session, admin, auth_header, make_event):
     headers = auth_header(admin)
     await make_event()
